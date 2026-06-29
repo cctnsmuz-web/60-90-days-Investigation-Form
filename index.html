@@ -1,213 +1,89 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CCTNS Data Entry Form</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #0d1b2a;
-    color: #fff;
-    min-height: 100vh;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-  }
-  .container { width: 100%; max-width: 480px; }
-  h1 {
-    font-size: 20px;
-    text-align: center;
-    color: #ffb703;
-    margin-bottom: 4px;
-  }
-  .subtitle {
-    text-align: center;
-    font-size: 13px;
-    color: #aaa;
-    margin-bottom: 22px;
-  }
-  .form-card {
-    background: #1b2a3d;
-    border-radius: 14px;
-    padding: 22px;
-  }
-  label {
-    display: block;
-    font-size: 14px;
-    margin-bottom: 6px;
-    margin-top: 16px;
-    color: #e0e0e0;
-  }
-  label .required { color: #ff5252; }
-  input, select {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 8px;
-    border: 1px solid #3a4a5e;
-    background: #0d1b2a;
-    color: #fff;
-    font-size: 15px;
-  }
-  input:focus, select:focus {
-    outline: none;
-    border-color: #ffb703;
-  }
-  small.hint { color: #888; font-size: 11px; display: block; margin-top: 4px; }
-  .error-text { color: #ff5252; font-size: 12px; margin-top: 4px; display: none; }
-  .btn {
-    width: 100%;
-    margin-top: 26px;
-    padding: 15px;
-    border: none;
-    border-radius: 10px;
-    background: #2e7d32;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn:disabled { background: #555; cursor: not-allowed; }
-  .message {
-    margin-top: 16px;
-    padding: 14px;
-    border-radius: 10px;
-    text-align: center;
-    font-size: 14px;
-    display: none;
-  }
-  .message.success { background: #1b3a1f; color: #69f0ae; border: 1px solid #2e7d32; }
-  .message.failure { background: #3a1b1b; color: #ff8a80; border: 1px solid #b71c1c; }
-  footer { text-align: center; margin-top: 20px; font-size: 11px; color: #555; }
-</style>
-</head>
-<body>
-<div class="container">
-  <h1>📋 CCTNS Data Entry Form</h1>
-  <div class="subtitle">Naya FIR / Investigation Entry - Muzaffarnagar</div>
-
-  <div class="form-card">
-    <form id="entryForm" autocomplete="off">
-
-      <label>थाना का नाम (PS Name) <span class="required">*</span></label>
-      <input type="text" id="ps_name" required placeholder="जैसे: कोतवाली, सिविल लाइन...">
-
-      <label>विवेचक अधिकारी का नाम (IO Name) <span class="required">*</span></label>
-      <input type="text" id="io_name" required placeholder="जैसे: अंकुर शर्मा">
-
-      <label>मुकदमा अपराध संख्या (FIR No.) <span class="required">*</span></label>
-      <input type="text" id="fir_no" required placeholder="जैसे: 55/2026">
-
-      <label>पंजीकरण तिथि (FIR Date) <span class="required">*</span></label>
-      <input type="date" id="fir_date" required>
-      <small class="hint">Calendar se select karein - format khud sahi ban jayega</small>
-
-      <label>विवेचना प्रकार (Investigation Type) <span class="required">*</span></label>
-      <select id="inv_type" required>
-        <option value="" disabled selected>चुनें...</option>
-        <option value="60">60 दिवसीय</option>
-        <option value="90">90 दिवसीय</option>
-      </select>
-
-      <label>मोबाइल नंबर (IO Mobile) <span class="required">*</span></label>
-      <input type="tel" id="mobile" required placeholder="10 अंक का नंबर" maxlength="10" pattern="[6-9][0-9]{9}">
-      <small class="hint">10 अंक, 6-9 से शुरू (जैसे 9876543210)</small>
-      <span class="error-text" id="mobileError">कृपया सही 10 अंक का मोबाइल नंबर डालें</span>
-
-      <button type="submit" class="btn" id="submitBtn">✅ Submit Entry</button>
-
-      <div class="message success" id="successMsg">✅ Data safaltapoorvak save ho gaya!</div>
-      <div class="message failure" id="failureMsg"></div>
-    </form>
-  </div>
-
-  <footer>CCTNS Muzaffarnagar &middot; Data Entry Form v1</footer>
-</div>
-
-<script>
-// ====== YAHAN APNA APPS SCRIPT WEB APP URL DAALEN ======
-const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
-// ========================================================
-
-const form = document.getElementById('entryForm');
-const submitBtn = document.getElementById('submitBtn');
-const successMsg = document.getElementById('successMsg');
-const failureMsg = document.getElementById('failureMsg');
-const mobileInput = document.getElementById('mobile');
-const mobileError = document.getElementById('mobileError');
-
-mobileInput.addEventListener('input', () => {
-  mobileInput.value = mobileInput.value.replace(/\D/g, '').slice(0, 10);
-});
-
-function formatDateToDDMMYYYY(isoDate) {
-  // isoDate aata hai "YYYY-MM-DD" format mein date input se
-  const [y, m, d] = isoDate.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  successMsg.style.display = 'none';
-  failureMsg.style.display = 'none';
-  mobileError.style.display = 'none';
-
-  const mobile = mobileInput.value.trim();
-  if (!/^[6-9]\d{9}$/.test(mobile)) {
-    mobileError.style.display = 'block';
-    mobileInput.focus();
-    return;
-  }
-
-  const psName = document.getElementById('ps_name').value.trim();
-  const ioName = document.getElementById('io_name').value.trim();
-  const firNo = document.getElementById('fir_no').value.trim();
-  const firDateRaw = document.getElementById('fir_date').value;
-  const invType = document.getElementById('inv_type').value;
-
-  if (!psName || !ioName || !firNo || !firDateRaw || !invType) {
-    failureMsg.innerText = "⚠️ Kripya saare zaroori fields bharen.";
-    failureMsg.style.display = 'block';
-    return;
-  }
-
-  const firDate = formatDateToDDMMYYYY(firDateRaw);
-
-  submitBtn.disabled = true;
-  submitBtn.innerText = "Submitting...";
-
-  const payload = new URLSearchParams({
-    ps_name: psName,
-    io_name: ioName,
-    fir_no: firNo,
-    fir_date: firDate,
-    inv_type: invType,
-    mobile: mobile
-  });
-
+/**
+ * CCTNS Data Entry Form - Backend Script
+ * ----------------------------------------
+ * Yeh script Google Sheet ke "Extensions > Apps Script" mein lagana hai.
+ * Iska kaam: web form se aaya hua data validate karna aur Sheet mein
+ * naya row add karna - taaki thana wale log seedha Sheet edit na karein,
+ * sirf form bharein aur yahi script safely Sheet update kare.
+ *
+ * SETUP STEPS (ek baar karna hai):
+ * 1. Apni Google Sheet kholiye
+ * 2. Top menu mein "Extensions" -> "Apps Script" par click karein
+ * 3. Jo default code khula ho usse sab delete karke yeh poora code paste kar dein
+ * 4. Upar "Save" (floppy disk icon) dabayen
+ * 5. "Deploy" -> "New deployment" par click karein
+ * 6. Gear icon (Settings) -> "Web app" select karein
+ * 7. "Who has access" mein "Anyone" select karein (zaroori hai, warna form
+ *    kaam nahi karega)
+ * 8. "Deploy" dabayen, Google permission maangega - "Authorize access"
+ *    karein, apna Google account select karein, "Advanced" -> "Go to
+ *    project (unsafe)" -> "Allow" (yeh normal hai, yeh aapki apni Sheet hai)
+ * 9. Jo "Web app URL" milega (https://script.google.com/macros/s/.../exec)
+ *    - usi ko HTML form file mein APPS_SCRIPT_URL wali jagah daalna hai
+ */
+ 
+const SHEET_NAME = "Sheet1"; // Agar aapki sheet ka tab ka naam alag hai to yahan badal dein
+ 
+function doPost(e) {
   try {
-    const response = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: payload
-    });
-    const result = await response.json();
-
-    if (result.success) {
-      successMsg.style.display = 'block';
-      form.reset();
-    } else {
-      failureMsg.innerText = "❌ " + result.message;
-      failureMsg.style.display = 'block';
+    const params = e.parameter;
+ 
+    // ---------- Server-side validation (zaroori, kyunki client-side
+    // validation ko koi bypass kar sakta hai) ----------
+    const required = ["ps_name", "io_name", "fir_no", "fir_date", "inv_type", "mobile"];
+    for (const field of required) {
+      if (!params[field] || params[field].toString().trim() === "") {
+        return respond(false, `Field '${field}' khaali nahi ho sakta.`);
+      }
     }
+ 
+    const mobile = params.mobile.toString().trim();
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      return respond(false, "Mobile number 10 digit ka hona chahiye aur 6-9 se shuru hona chahiye.");
+    }
+ 
+    const invType = params.inv_type.toString().trim();
+    if (invType !== "60" && invType !== "90") {
+      return respond(false, "Inv_Type sirf 60 ya 90 ho sakta hai.");
+    }
+ 
+    const firDate = params.fir_date.toString().trim();
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(firDate)) {
+      return respond(false, "FIR_Date format DD/MM/YYYY mein hona chahiye.");
+    }
+ 
+    // ---------- Sheet mein row add karo ----------
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      return respond(false, `Sheet tab '${SHEET_NAME}' nahi mila.`);
+    }
+ 
+    sheet.appendRow([
+      params.ps_name.toString().trim(),
+      params.io_name.toString().trim(),
+      params.fir_no.toString().trim(),
+      firDate,
+      invType,
+      mobile,
+      "" // Chargesheet_Filed - hamesha khaali shuru mein
+    ]);
+ 
+    return respond(true, "Data safaltapoorvak save ho gaya.");
+ 
   } catch (err) {
-    failureMsg.innerText = "❌ Server se connect nahi ho paya. Internet check karein ya thodi der baad try karein.";
-    failureMsg.style.display = 'block';
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Submit Entry";
+    return respond(false, "Server error: " + err.toString());
   }
-});
-</script>
-</body>
-</html>
+}
+ 
+function respond(success, message) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: success, message: message }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+ 
+// Browser mein seedha URL khol kar test karne ke liye (optional, GET request)
+function doGet(e) {
+  return ContentService
+    .createTextOutput("CCTNS Data Entry backend chal raha hai. Form se POST request bhejen.")
+    .setMimeType(ContentService.MimeType.TEXT);
+}
